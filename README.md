@@ -63,6 +63,17 @@
 
 例：`唔該` = `6464`、`多謝` = `3693`。可以整句連打，再逐段選字（先選「你好」，剩下的碼繼續選）。
 
+- **寬鬆拼寫**（類似 Gboard）：不必用標準粵拼，常見的港式拼法也可以，例：是但 shi dan = `744326`、香港 heung gong、有 yau、水 shui、月餅 yuet beng、張 cheung。支援的寫法：
+
+  | 粵拼 | 也可打 | 例子 |
+  |---|---|---|
+  | s / c / z / j 聲母 | sh / ch / j、ch、ts / y | 是 shi、陳 chan、張 jeung / cheung、有 yau |
+  | aa | a | 但 dan、三 sam |
+  | oe / eo | eu、u | 香 heung、水 shui / seui、春 chun |
+  | yu、jyu | u、ue、yu、yue | 書 shu / shue、月 yuet / yut |
+  | ou | o | 好 ho |
+  | ik / ing | ek / eng | 石 shek、明 meng |
+
 - **聲母簡拼**：每個字只打第一個字母，例：唔該 m g = `64`、多謝 d z = `39`。
 - **懶音**：n 讀 l（你 = lei）、省略 ng（我 = o、五 = m）、gwo 讀 go（廣 = gong）都打得出；正音會顯示在候選列上方。三種懶音可在設定分別關閉。
 

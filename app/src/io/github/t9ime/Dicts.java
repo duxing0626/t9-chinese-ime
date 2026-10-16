@@ -90,7 +90,7 @@ final class Dicts {
         switch (which) {
             case JYUTPING:
                 return new Engine.Jyutping(Table.read(c.getAssets().open("jyutping.txt"), 4),
-                        asset(c, "jyutping_abbr.txt"));
+                        asset(c, "jyutping_abbr.txt"), asset(c, "loose.txt"));
             case CANGJIE: return new Engine.Shape(asset(c, "cangjie.txt"), Engine.Shape.CANGJIE);
             case QUICK: return new Engine.Shape(asset(c, "quick.txt"), Engine.Shape.QUICK);
             case STROKE: return new Engine.Shape(asset(c, "stroke.txt"), Engine.Shape.STROKE);

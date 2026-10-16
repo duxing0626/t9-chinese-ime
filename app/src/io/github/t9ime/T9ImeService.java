@@ -242,6 +242,7 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
                     | (prefs.getBoolean("lazy_ng", true) ? Engine.Jyutping.LAZY_NG : 0)
                     | (prefs.getBoolean("lazy_gwo", true) ? Engine.Jyutping.LAZY_GWO : 0);
             j.abbreviations = prefs.getBoolean("abbr", true);
+            j.looseSpelling = prefs.getBoolean("loose", true);
             j.user = learnOn ? user : null;
         }
         return e;

@@ -11,6 +11,7 @@ Output formats (UTF-8, tab separated, sorted by the first column):
   stroke.txt              : digits  char  score
   jyutping.txt            : digits  syllable-lengths  reading  text  lazy-flags  score
   jyutping_abbr.txt       : initials-digits  reading  text  score
+  loose.txt               : loose-spelling-digits  jyutping-syllable-digits
   assoc.txt               : char  continuation1 continuation2 ...
   emoji_words.txt         : keyword  emoji1 emoji2 ...   (CLDR annotations, Unicode license)
   emoji_groups.txt        : group-name  emoji1 emoji2 ...
@@ -197,8 +198,50 @@ def build_jyutping(freq):
         if 2 <= len(syls) <= 6 and score > 0:
             abbr_rows.append((t9("".join(x[0] for x in syls)), reading, text, score))
     print(f"lazy-sound rows: {lazy_rows}", file=sys.stderr)
+    build_loose(sorted({reading for (text, reading) in best if len(text) == 1}))
     write("jyutping.txt", rows)
     write("jyutping_abbr.txt", abbr_rows)
+
+
+# Loose spellings (寬鬆拼寫): common Hong Kong romanizations mapped back to Jyutping syllables.
+LOOSE_INITIALS = {"s": ["sh"], "c": ["ch"], "z": ["j", "ch", "ts"], "j": ["y"]}
+LOOSE_FINALS = [("oeng", ["eung"]), ("oek", ["euk"]), ("eoi", ["ui", "eui"]), ("eon", ["un", "eun"]),
+                ("eot", ["ut", "eut"]), ("oe", ["eu"]), ("aa", ["a"]), ("yu", ["u", "ue"]),
+                ("ou", ["o"]), ("ik", ["ek"]), ("ing", ["eng"])]
+
+
+def loose_spellings(syl):
+    """Alternative spellings of one toneless Jyutping syllable, e.g. si -> shi, daan -> dan."""
+    m = re.match(r"(ng|gw|kw|[bpmfdtnlgkhwzcsj]?)(.*)", syl)
+    initial, final = m.group(1), m.group(2)
+    if initial == "j" and final.startswith("yu"):
+        # jyu, jyut -> yu, yue, yut, yuet
+        rest = final[2:]
+        return {"yu" + rest, "yue" + rest}
+    initials = [initial] + LOOSE_INITIALS.get(initial, [])
+    finals = {final}
+    for old, news in LOOSE_FINALS:
+        for f in list(finals):
+            if f.startswith(old) and (old not in ("oe", "ou") or f == old):
+                finals.update(new + f[len(old):] for new in news)
+    out = {i + f for i in initials for f in finals}
+    out.discard(syl)
+    return {v for v in out if v}
+
+
+def build_loose(syllables):
+    pairs = set()
+    for syl in syllables:
+        canon = t9(syl)
+        pairs.add((canon, canon))
+        for v in loose_spellings(syl):
+            if re.fullmatch(r"[a-z]+", v):
+                pairs.add((t9(v), canon))
+    rows = sorted(pairs)
+    with open(os.path.join(OUT, "loose.txt"), "w", encoding="utf-8") as f:
+        for variant, canon in rows:
+            f.write(f"{variant}\t{canon}\n")
+    print(f"loose.txt: {len(rows)} rows from {len(syllables)} syllables", file=sys.stderr)
 
 
 def jyutping_row(syls, reading, text, flags, score):

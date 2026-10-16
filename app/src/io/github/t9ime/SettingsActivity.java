@@ -99,6 +99,7 @@ public class SettingsActivity extends Activity {
             + "【粵拼】按字母所在的鍵，每個字母按一下。\n"
             + "2 abc　3 def　4 ghi　5 jkl　6 mno　7 pqrs　8 tuv　9 wxyz\n"
             + "例：你好 nei hou = 634 468；1 = 分隔音節。可以連打詞語，或先選前面的字再選後面的。\n"
+            + "寬鬆拼寫：可用港式拼法，例：是但 shi dan = 744326，香港 heung gong，有 yau，水 shui。\n"
             + "聲母簡拼：每字只打第一個字母，例：唔該 m g = 64。\n"
             + "懶音：你 lei、我 o、廣 gong 都打得出（可在設定關閉）。\n"
             + "分段選出的詞語會自動記住，下次可以一次過打出。\n\n"

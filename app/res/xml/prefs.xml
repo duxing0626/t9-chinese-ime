@@ -19,6 +19,8 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="粵拼">
+        <CheckBoxPreference android:key="loose" android:title="寬鬆拼寫（類似 Gboard）"
+            android:summary="接受常見港式拼法，例：shi dan = 是但，heung gong = 香港，yau = 有" android:defaultValue="true" />
         <CheckBoxPreference android:key="lazy_nl" android:title="懶音：n 讀成 l"
             android:summary="例：你 nei 可打 lei" android:defaultValue="true" />
         <CheckBoxPreference android:key="lazy_ng" android:title="懶音：省略 ng"

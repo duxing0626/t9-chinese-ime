@@ -8,15 +8,22 @@ final class Candidate {
     final int consumed;
     /** Match quality (Jyutping: 3 exact, 2 completion or abbreviation, 1 covers only the start). */
     final int tier;
+    /** Ranking score within the engine's list (higher first); used to merge in extra matches. */
+    final int rank;
 
     Candidate(String text, String code, int consumed) {
-        this(text, code, consumed, 0);
+        this(text, code, consumed, 0, 0);
     }
 
     Candidate(String text, String code, int consumed, int tier) {
+        this(text, code, consumed, tier, 0);
+    }
+
+    Candidate(String text, String code, int consumed, int tier, int rank) {
         this.text = text;
         this.code = code;
         this.consumed = consumed;
         this.tier = tier;
+        this.rank = rank;
     }
 }

@@ -2,6 +2,9 @@ package io.github.t9ime;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -240,13 +243,33 @@ abstract class Engine {
         final Table table;
         /** initials as digits, reading, text, score; may be null */
         final Table abbr;
+        /** Digits of a loose spelling (shi, dan, heung …) -> digits of the Jyutping syllables it may mean. */
+        private final HashMap<String, String[]> loose = new HashMap<String, String[]>();
         volatile int lazyMask = LAZY_NL | LAZY_NG | LAZY_GWO;
         volatile boolean abbreviations = true;
+        volatile boolean looseSpelling = true;
         volatile UserDict user;
 
         Jyutping(Table table, Table abbr) {
+            this(table, abbr, null);
+        }
+
+        /** @param looseTable lines of "loose spelling digits \t syllable digits"; may be null */
+        Jyutping(Table table, Table abbr, Table looseTable) {
             this.table = table;
             this.abbr = abbr;
+            if (looseTable != null) {
+                HashMap<String, List<String>> m = new HashMap<String, List<String>>();
+                for (int i = 0; i < looseTable.size; i++) {
+                    String k = looseTable.key(i);
+                    List<String> l = m.get(k);
+                    if (l == null) m.put(k, l = new ArrayList<String>());
+                    l.add(looseTable.field(i, 1));
+                }
+                for (java.util.Map.Entry<String, List<String>> e : m.entrySet()) {
+                    loose.put(e.getKey(), e.getValue().toArray(new String[0]));
+                }
+            }
         }
 
         @Override
@@ -321,7 +344,8 @@ abstract class Engine {
                 }
                 int[] al = ar.sorted();
                 for (int k = 0; k < al.length && k < 40; k++) {
-                    abbrCands.add(new Candidate(abbr.field(al[k], 2), abbr.field(al[k], 1), -1, 2));
+                    abbrCands.add(new Candidate(abbr.field(al[k], 2), abbr.field(al[k], 1), -1, 2,
+                            abbr.score(al[k]) / 4));
                     abbrScores.add(abbr.score(al[k]) / 4);
                 }
             }
@@ -346,10 +370,12 @@ abstract class Engine {
                 int consumed = full ? -1 : rawAfter[klen];
                 if (consumed >= raw.length()) consumed = -1;
                 int tier = klen == n ? 3 : full ? 2 : 1;
-                out.add(new Candidate(table.field(i, 3), table.field(i, 2), consumed, tier));
+                int rank = !full ? baseScore(i) : klen == n ? baseScore(i) : baseScore(i) / 8;
+                out.add(new Candidate(table.field(i, 3), table.field(i, 2), consumed, tier, rank));
             }
             while (nextAbbr < abbrCands.size()) out.add(abbrCands.get(nextAbbr++));
 
+            if (looseSpelling && !loose.isEmpty()) addLooseMatches(out, raw, digits, sepAt, rawAfter);
             addUserWords(out, raw, digits, sepAt, rawAfter, anySep);
 
             HashSet<String> seen = new HashSet<String>();
@@ -359,6 +385,99 @@ abstract class Engine {
                 if (seen.add(c.text + '\u0001' + c.consumed)) unique.add(c);
             }
             return unique;
+        }
+
+        /**
+         * Reads the keys as loose spellings (shi dan = 是但, heung gong = 香港, yau = 有): splits them
+         * into spellings from the loose map, maps each to Jyutping and looks the result up. Only
+         * splits that really use a loose spelling are added; the rest are already found above.
+         */
+        private void addLooseMatches(List<Candidate> out, String raw, String digits, boolean[] sepAt, int[] rawAfter) {
+            LooseSearch search = new LooseSearch(digits, sepAt, rawAfter, raw.length());
+            search.dfs(0, "", "", false);
+            List<Candidate> full = new ArrayList<Candidate>();
+            List<Candidate> partial = new ArrayList<Candidate>();
+            for (Candidate c : search.found) (c.consumed < 0 ? full : partial).add(c);
+            Comparator<Candidate> byRank = new Comparator<Candidate>() {
+                @Override
+                public int compare(Candidate a, Candidate b) {
+                    if (a.consumed != b.consumed) return b.consumed - a.consumed;
+                    return b.rank - a.rank;
+                }
+            };
+            Collections.sort(full, byRank);
+            Collections.sort(partial, byRank);
+            for (Candidate c : full) {
+                int pos = 0;
+                while (pos < out.size()) {
+                    Candidate o = out.get(pos);
+                    if (o.consumed >= 0 || o.rank < c.rank) break;
+                    pos++;
+                }
+                out.add(pos, c);
+            }
+            for (Candidate c : partial) {
+                int pos = 0;
+                while (pos < out.size()) {
+                    Candidate o = out.get(pos);
+                    if (o.consumed >= 0 && (o.consumed < c.consumed || (o.consumed == c.consumed && o.rank < c.rank))) {
+                        break;
+                    }
+                    pos++;
+                }
+                out.add(pos, c);
+            }
+        }
+
+        private final class LooseSearch {
+            private static final int MAX_NODES = 3000;
+            private static final int MAX_FULL = 80;
+            private static final int MAX_PARTIAL = 60;
+            final String digits;
+            final boolean[] sepAt;
+            final int[] rawAfter;
+            final int rawLength;
+            final List<Candidate> found = new ArrayList<Candidate>();
+            private int nodes;
+            private int fullCount;
+            private int partialCount;
+
+            LooseSearch(String digits, boolean[] sepAt, int[] rawAfter, int rawLength) {
+                this.digits = digits;
+                this.sepAt = sepAt;
+                this.rawAfter = rawAfter;
+                this.rawLength = rawLength;
+            }
+
+            /** @param canon Jyutping digits so far, @param lengths their syllable lengths, @param used a loose spelling was used */
+            void dfs(int pos, String canon, String lengths, boolean used) {
+                if (++nodes > MAX_NODES || fullCount >= MAX_FULL) return;
+                int n = digits.length();
+                if (pos > 0 && used) collect(pos, canon, lengths);
+                for (int end = pos + 1; end <= n && end <= pos + 8; end++) {
+                    if (end - 1 > pos && sepAt[end - 1]) break;  // a syllable cannot span a typed separator
+                    String seg = digits.substring(pos, end);
+                    String[] syllables = loose.get(seg);
+                    if (syllables == null) continue;
+                    for (String syl : syllables) {
+                        String next = canon + syl;
+                        // Only follow spellings that begin some dictionary entry.
+                        if (table.lowerBound(next) >= table.upperBound(next)) continue;
+                        dfs(end, next, lengths + (char) ('0' + Math.min(syl.length(), 9)), used || !syl.equals(seg));
+                    }
+                }
+            }
+
+            private void collect(int pos, String canon, String lengths) {
+                int consumed = pos >= digits.length() ? -1 : rawAfter[pos];
+                if (consumed >= rawLength) consumed = -1;
+                for (int i = table.lowerBound(canon); i < table.size && table.keyEquals(i, canon); i++) {
+                    if (table.extra(i) != 0 || !table.field(i, 1).equals(lengths)) continue;
+                    if (consumed < 0 ? fullCount++ >= MAX_FULL : partialCount++ >= MAX_PARTIAL) continue;
+                    found.add(new Candidate(table.field(i, 3), table.field(i, 2), consumed,
+                            consumed < 0 ? 3 : 1, table.score(i) / 3));
+                }
+            }
         }
 
         private void addUserWords(List<Candidate> out, String raw, String digits, boolean[] sepAt,
