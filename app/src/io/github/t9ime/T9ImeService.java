@@ -141,6 +141,7 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
         view = new CandidateView(this);
         view.setListener(this);
         view.setTextSize(candSize);
+        view.setCompact(prefs.getBoolean("cand_compact", false));
         return view;
     }
 
@@ -233,6 +234,7 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
             candSize = size;
             if (view != null) view.setTextSize(size);
         }
+        if (view != null) view.setCompact(prefs.getBoolean("cand_compact", false));
     }
 
     private static int parse(String s, int fallback) {

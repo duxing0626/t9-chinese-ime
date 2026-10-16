@@ -12,7 +12,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Two-row bar: mode + composing text on top, a page of candidates below. Pages hold at most 9 items. */
+/**
+ * The candidate bar: mode + composing text on top and a page of candidates below, or all on one
+ * row in compact mode. Pages hold at most 9 items.
+ */
 final class CandidateView extends View {
     interface Listener {
         void onCandidateTapped(int index);
@@ -39,6 +42,10 @@ final class CandidateView extends View {
     private final List<float[]> hitBoxes = new ArrayList<float[]>();
     private float pad;
     private int pagesForWidth = -1;
+    private boolean compact;
+    /** Compact mode: width taken by the mode badge and composing text at the start of the row. */
+    private float headerWidth;
+    private float pagesForHeader = -1;
 
     CandidateView(Context context) {
         super(context);
@@ -61,9 +68,18 @@ final class CandidateView extends View {
         invalidate();
     }
 
+    void setCompact(boolean compact) {
+        if (this.compact == compact) return;
+        this.compact = compact;
+        pagesForWidth = -1;
+        requestLayout();
+        invalidate();
+    }
+
     void show(String mode, String preedit, List<Candidate> candidates, int highlight, boolean numbered) {
         this.mode = mode;
         this.preedit = preedit;
+        if (compact) headerWidth = headerWidth();
         if (this.candidates != candidates) pagesForWidth = -1;
         this.candidates = candidates;
         this.highlight = highlight;
@@ -84,12 +100,25 @@ final class CandidateView extends View {
         return "\n".equals(c.text) ? "↵" : c.text;
     }
 
+    private float modeWidth() {
+        return mode.length() > 0 ? small.measureText(mode) + pad : 0;
+    }
+
+    /** Badge plus composing text, at most 40% of the bar so candidates keep most of the row. */
+    private float headerWidth() {
+        float w = pad + modeWidth() + pad;
+        if (preedit.length() > 0) w += small.measureText(preedit) + pad;
+        return Math.min(w, barWidth() * 0.4f);
+    }
+
     private void paginate() {
         int width = barWidth();
-        if (pagesForWidth == width) return;
+        float header = compact ? headerWidth : 0;
+        if (pagesForWidth == width && pagesForHeader == header) return;
         pagesForWidth = width;
+        pagesForHeader = header;
         pageStarts.clear();
-        float avail = width - pad * 2 - text.measureText("▶");
+        float avail = width - pad * 2 - text.measureText("▶") - header;
         float x = 0;
         int inPage = 0;
         pageStarts.add(0);
@@ -138,7 +167,9 @@ final class CandidateView extends View {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         Paint.FontMetrics fm = text.getFontMetrics();
         Paint.FontMetrics sm = small.getFontMetrics();
-        int h = (int) Math.ceil((fm.descent - fm.ascent) + (sm.descent - sm.ascent) + pad * 3);
+        int h = compact
+                ? (int) Math.ceil((fm.descent - fm.ascent) + pad * 1.6f)
+                : (int) Math.ceil((fm.descent - fm.ascent) + (sm.descent - sm.ascent) + pad * 3);
         setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), h);
     }
 
@@ -149,11 +180,16 @@ final class CandidateView extends View {
         Paint.FontMetrics sm = small.getFontMetrics();
         Paint.FontMetrics fm = text.getFontMetrics();
 
+        if (compact) {
+            drawCompact(canvas, width, fm, sm);
+            return;
+        }
+
         // Row 1: mode badge and composing text.
         float row1Base = pad - sm.ascent;
         float x = pad;
         if (mode.length() > 0) {
-            float mw = small.measureText(mode) + pad;
+            float mw = modeWidth();
             rect.set(x, pad * 0.5f, x + mw, row1Base + sm.descent);
             fill.setColor(MODE_BG);
             canvas.drawRoundRect(rect, pad * 0.4f, pad * 0.4f, fill);
@@ -166,14 +202,44 @@ final class CandidateView extends View {
         small.setColor(DIM);
 
         // Row 2: one page of candidates.
+        float top = row1Base + sm.descent + pad * 0.5f;
+        drawCandidates(canvas, width, pad, top, top + pad * 0.5f - fm.ascent);
+    }
+
+    /** Everything on one row: badge, composing text (its end if too long), then candidates. */
+    private void drawCompact(Canvas canvas, int width, Paint.FontMetrics fm, Paint.FontMetrics sm) {
+        float base = pad * 0.8f - fm.ascent;
+        float x = pad;
+        if (mode.length() > 0) {
+            float mw = modeWidth();
+            rect.set(x, base + sm.ascent - pad * 0.2f, x + mw, base + sm.descent + pad * 0.2f);
+            fill.setColor(MODE_BG);
+            canvas.drawRoundRect(rect, pad * 0.4f, pad * 0.4f, fill);
+            small.setColor(FG);
+            canvas.drawText(mode, x + pad * 0.5f, base, small);
+            x += mw + pad;
+        }
+        if (preedit.length() > 0) {
+            float room = headerWidth - (x - pad) - pad;
+            String shown = preedit;
+            while (shown.length() > 1 && small.measureText("…" + shown) > room && small.measureText(shown) > room) {
+                shown = shown.substring(1);
+            }
+            if (!shown.equals(preedit)) shown = "…" + shown;
+            small.setColor(0xFFFDD663);
+            canvas.drawText(shown, x, base, small);
+        }
+        small.setColor(DIM);
+        drawCandidates(canvas, width, headerWidth, pad * 0.3f, base);
+    }
+
+    private void drawCandidates(Canvas canvas, int width, float left, float top, float base) {
         hitBoxes.clear();
         if (candidates.isEmpty()) return;
-        float top = row1Base + sm.descent + pad * 0.5f;
-        float base = top + pad * 0.5f - fm.ascent;
         int page = pageOf(Math.max(highlight, 0));
         int start = pageStart(page);
         int end = pageEnd(page);
-        x = pad;
+        float x = left;
         for (int i = start; i < end; i++) {
             Candidate c = candidates.get(i);
             float w = itemWidth(c);

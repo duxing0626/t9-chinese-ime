@@ -52,7 +52,9 @@
         <CheckBoxPreference android:key="back_delete_text" android:title="返回鍵刪除已輸入的文字"
             android:summary="欄位有文字時，返回鍵刪除前一個字；欄位空白時才返回。長按返回鍵可隨時返回。適合沒有刪除鍵的手機"
             android:defaultValue="true" />
-        <ListPreference android:key="cand_size" android:title="候選字大小" android:defaultValue="22"
+        <CheckBoxPreference android:key="cand_compact" android:title="候選列單行顯示"
+            android:summary="模式、拼音和候選字放在同一行，候選列高度約減一半" android:defaultValue="false" />
+        <ListPreference android:key="cand_size" android:title="候選字大小" android:summary="%s" android:defaultValue="22"
             android:entries="@array/size_names" android:entryValues="@array/size_values" />
         <ListPreference android:key="tap_timeout" android:title="多按確認時間" android:defaultValue="900"
             android:entries="@array/timeout_names" android:entryValues="@array/timeout_values" />

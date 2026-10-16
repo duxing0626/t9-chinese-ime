@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="size_names">
+        <item>極小</item>
+        <item>較小</item>
         <item>小</item>
         <item>中</item>
         <item>大</item>
         <item>特大</item>
     </string-array>
     <string-array name="size_values">
+        <item>14</item>
+        <item>16</item>
         <item>18</item>
         <item>22</item>
         <item>26</item>
