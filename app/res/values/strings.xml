@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">九宮格中文輸入</string>
+    <string name="ime_name">九宮格中文（粵拼/倉頡/速成/筆畫）</string>
+    <string name="key_test">按鍵測試</string>
+</resources>

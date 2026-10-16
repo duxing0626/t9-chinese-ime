@@ -1,0 +1,12 @@
+# Downloaded Android SDK pieces (tools/fetch_sdk.sh)
+.sdk/
+# Build output
+build/
+dist/
+*.idsig
+# Signing keys -- never commit
+*.keystore
+*.jks
+# Source dictionaries (tools/fetch_data.sh)
+data/raw/
+.DS_Store

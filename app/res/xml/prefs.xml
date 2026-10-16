@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="啟用輸入法">
+        <Preference android:key="open_ime_settings" android:title="1. 在系統設定中啟用本輸入法" />
+        <Preference android:key="pick_ime" android:title="2. 切換到本輸入法" />
+        <Preference android:key="key_test" android:title="按鍵測試" android:summary="檢查手機實體鍵的鍵碼" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="輸入模式（按 # 輪流切換）">
+        <CheckBoxPreference android:key="mode_jyutping" android:title="粵拼" android:defaultValue="true" />
+        <CheckBoxPreference android:key="mode_cangjie" android:title="倉頡" android:defaultValue="true" />
+        <CheckBoxPreference android:key="mode_quick" android:title="速成" android:defaultValue="true" />
+        <CheckBoxPreference android:key="mode_stroke" android:title="筆畫" android:defaultValue="true" />
+        <CheckBoxPreference android:key="mode_custom" android:title="自訂碼表（例如九方）"
+            android:summary="碼表檔案：/sdcard/T9IME/custom.txt" android:defaultValue="true" />
+        <CheckBoxPreference android:key="mode_english" android:title="英文（Abc / abc / ABC）" android:defaultValue="true" />
+        <CheckBoxPreference android:key="mode_numeric" android:title="數字（123）" android:defaultValue="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="粵拼">
+        <CheckBoxPreference android:key="lazy_nl" android:title="懶音：n 讀成 l"
+            android:summary="例：你 nei 可打 lei" android:defaultValue="true" />
+        <CheckBoxPreference android:key="lazy_ng" android:title="懶音：省略 ng"
+            android:summary="例：我 ngo 可打 o，五 ng 可打 m" android:defaultValue="true" />
+        <CheckBoxPreference android:key="lazy_gwo" android:title="懶音：gwo / kwo 讀成 go / ko"
+            android:summary="例：廣 gwong 可打 gong" android:defaultValue="true" />
+        <CheckBoxPreference android:key="abbr" android:title="聲母簡拼"
+            android:summary="只打每個字的第一個字母，例：唔該 m g = 64" android:defaultValue="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="學習及表情符號">
+        <CheckBoxPreference android:key="learn" android:title="自動調頻"
+            android:summary="記住你選過的字詞並排前；粵拼分段選出的詞語會自動加入詞庫" android:defaultValue="true" />
+        <Preference android:key="clear_learning" android:title="清除學習記錄" />
+        <CheckBoxPreference android:key="emoji" android:title="表情符號候選"
+            android:summary="打「開心」「笑」「貓」等字詞時，候選中加入 😄 😂 🐱" android:defaultValue="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="輸入選項">
+        <CheckBoxPreference android:key="cangjie_multitap" android:title="倉頡/速成用多按輸入字根"
+            android:summary="關閉：每鍵按一下，自動猜字（類似 T9）。開啟：重複按鍵選擇字根，如 2 按兩下 = 月"
+            android:defaultValue="false" />
+        <CheckBoxPreference android:key="assoc" android:title="聯想詞" android:summary="出字後顯示常用後續詞（按 ▼ 選擇）"
+            android:defaultValue="true" />
+        <CheckBoxPreference android:key="back_delete" android:title="輸入中用返回鍵刪除"
+            android:summary="適合沒有獨立刪除鍵的手機" android:defaultValue="true" />
+        <ListPreference android:key="cand_size" android:title="候選字大小" android:defaultValue="22"
+            android:entries="@array/size_names" android:entryValues="@array/size_values" />
+        <ListPreference android:key="tap_timeout" android:title="多按確認時間" android:defaultValue="900"
+            android:entries="@array/timeout_names" android:entryValues="@array/timeout_values" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="關於">
+        <Preference android:key="help" android:title="按鍵說明" />
+        <Preference android:key="about" android:title="資料來源及授權" />
+    </PreferenceCategory>
+</PreferenceScreen>
