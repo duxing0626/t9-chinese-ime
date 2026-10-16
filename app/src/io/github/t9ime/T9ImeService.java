@@ -83,6 +83,9 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
     private boolean emojiOn;
     private boolean assocOn;
     private boolean backDelete;
+    private boolean backDeletesText;
+    /** BACK went down over text: delete one character on release, or go back if held. */
+    private boolean backPending;
     private int tapTimeoutMs = 900;
     private int candSize = 22;
 
@@ -195,6 +198,7 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
         emojiOn = prefs.getBoolean("emoji", true);
         assocOn = prefs.getBoolean("assoc", true);
         backDelete = prefs.getBoolean("back_delete", true);
+        backDeletesText = prefs.getBoolean("back_delete_text", true);
         tapTimeoutMs = parse(prefs.getString("tap_timeout", "900"), 900);
         int size = parse(prefs.getString("cand_size", "22"), 22);
         if (size != candSize) {
@@ -295,6 +299,13 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
                 } else {
                     handleTap(keyCode);
                 }
+            } else if (keyCode == KeyEvent.KEYCODE_BACK && backPending) {
+                backPending = false;
+                if (longPressedKey == keyCode) {
+                    longPressedKey = -1;
+                } else {
+                    deletePreviousChar();
+                }
             }
             return true;
         }
@@ -303,6 +314,13 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
 
     @Override
     public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK && backPending) {
+            // Holding BACK always means "go back", even with text in the field.
+            backPending = false;
+            longPressedKey = keyCode;
+            sendDownUpKeyEvents(KeyEvent.KEYCODE_BACK);
+            return true;
+        }
         if (active && handleLongPress(keyCode)) {
             longPressedKey = keyCode;
             return true;
@@ -321,10 +339,21 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
         }
         switch (keyCode) {
             case KeyEvent.KEYCODE_DEL:
-            case KeyEvent.KEYCODE_CLEAR:
                 return onDelete(false);
+            case KeyEvent.KEYCODE_CLEAR:
+                // Apps ignore CLEAR, so the C key on some keypads would otherwise do nothing.
+                if (onDelete(false)) return true;
+                if (!fieldHasText()) return false;
+                deletePreviousChar();
+                return true;
             case KeyEvent.KEYCODE_BACK:
-                return onDelete(true);
+                if (onDelete(true)) return true;
+                if (event.getRepeatCount() > 0) return backPending;
+                if (!backDeletesText || !fieldHasText()) return false;
+                event.startTracking();
+                longPressedKey = -1;
+                backPending = true;
+                return true;
             case KeyEvent.KEYCODE_DPAD_LEFT:
             case KeyEvent.KEYCODE_DPAD_RIGHT:
             case KeyEvent.KEYCODE_DPAD_UP:
@@ -584,6 +613,21 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
         }
         refresh();
         return true;
+    }
+
+    /** Whether the editor has text before the cursor (or a selection) that BACK / C could delete. */
+    private boolean fieldHasText() {
+        InputConnection ic = getCurrentInputConnection();
+        if (ic == null) return false;
+        CharSequence selected = ic.getSelectedText(0);
+        if (selected != null && selected.length() > 0) return true;
+        CharSequence before = ic.getTextBeforeCursor(1, 0);
+        return before != null && before.length() > 0;
+    }
+
+    /** Lets the app delete as if DEL were pressed, so selections and emoji are handled properly. */
+    private void deletePreviousChar() {
+        sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL);
     }
 
     private boolean onDpad(int keyCode) {

@@ -46,7 +46,10 @@
         <CheckBoxPreference android:key="assoc" android:title="聯想詞" android:summary="出字後顯示常用後續詞（按 ▼ 選擇）"
             android:defaultValue="true" />
         <CheckBoxPreference android:key="back_delete" android:title="輸入中用返回鍵刪除"
-            android:summary="適合沒有獨立刪除鍵的手機" android:defaultValue="true" />
+            android:summary="打字途中，返回鍵刪除一碼" android:defaultValue="true" />
+        <CheckBoxPreference android:key="back_delete_text" android:title="返回鍵刪除已輸入的文字"
+            android:summary="欄位有文字時，返回鍵刪除前一個字；欄位空白時才返回。長按返回鍵可隨時返回。適合沒有刪除鍵的手機"
+            android:defaultValue="true" />
         <ListPreference android:key="cand_size" android:title="候選字大小" android:defaultValue="22"
             android:entries="@array/size_names" android:entryValues="@array/size_values" />
         <ListPreference android:key="tap_timeout" android:title="多按確認時間" android:defaultValue="900"
