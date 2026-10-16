@@ -3,6 +3,8 @@
     package="io.github.t9ime">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- Only the settings screen's "check for updates" uses the network; the keyboard never does. -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"

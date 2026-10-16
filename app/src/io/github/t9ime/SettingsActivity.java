@@ -31,6 +31,16 @@ public class SettingsActivity extends Activity {
         @Override
         public void onResume() {
             super.onResume();
+            Preference update = findPreference("check_update");
+            if (update != null) {
+                try {
+                    String v = getActivity().getPackageManager()
+                            .getPackageInfo(getActivity().getPackageName(), 0).versionName;
+                    update.setSummary("目前版本 " + v + "，從 GitHub 下載最新版本");
+                } catch (android.content.pm.PackageManager.NameNotFoundException ignored) {
+                    // keep the default summary
+                }
+            }
             Preference custom = findPreference("mode_custom");
             if (custom != null) {
                 boolean exists = Dicts.customFile().exists();
@@ -68,6 +78,10 @@ public class SettingsActivity extends Activity {
                         })
                         .setNegativeButton("取消", null)
                         .show();
+                return true;
+            }
+            if ("check_update".equals(key)) {
+                new Updater(getActivity()).check();
                 return true;
             }
             if ("help".equals(key)) {

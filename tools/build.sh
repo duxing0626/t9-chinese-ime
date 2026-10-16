@@ -7,8 +7,9 @@ SDK=.sdk
 BT=$SDK/build-tools
 JAR=$SDK/platform/android.jar
 OUT=build
-VERSION_CODE=${VERSION_CODE:-1}
-VERSION_NAME=${VERSION_NAME:-1.0}
+# Version numbers live in version.properties; bump both for each release.
+VERSION_CODE=${VERSION_CODE:-$(sed -n 's/^versionCode=//p' version.properties)}
+VERSION_NAME=${VERSION_NAME:-$(sed -n 's/^versionName=//p' version.properties)}
 
 rm -rf "$OUT"
 mkdir -p "$OUT/gen" "$OUT/classes" "$OUT/dex" dist

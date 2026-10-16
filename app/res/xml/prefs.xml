@@ -54,6 +54,8 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="關於">
+        <Preference android:key="check_update" android:title="檢查更新"
+            android:summary="從 GitHub 下載最新版本" />
         <Preference android:key="help" android:title="按鍵說明" />
         <Preference android:key="about" android:title="資料來源及授權" />
     </PreferenceCategory>
