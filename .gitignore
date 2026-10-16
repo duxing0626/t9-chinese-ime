@@ -10,3 +10,4 @@ dist/
 # Source dictionaries (tools/fetch_data.sh)
 data/raw/
 .DS_Store
+__pycache__/
