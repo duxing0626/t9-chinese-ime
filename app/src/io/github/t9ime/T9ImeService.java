@@ -508,42 +508,42 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
             commit(" ");
             return;
         }
-        String group = d == 1 ? TAP_PUNCT : TAP_LETTERS[d] + d;
         long now = SystemClock.uptimeMillis();
-        boolean upper;
         if (englishPending && tapKey == d && now - tapTime < tapTimeoutMs) {
-            tapIndex = (tapIndex + 1) % group.length();
-            upper = tapUpper;
+            tapIndex = (tapIndex + 1) % tapChars.length();
         } else {
             finishTap();
             tapKey = d;
             tapIndex = 0;
-            upper = mode == M_UPPER || (mode == M_ABC && atSentenceStart(ic));
-            tapUpper = upper;
+            tapChars = tapGroup(d, ic);
         }
-        char c = group.charAt(tapIndex);
-        if (upper) c = Character.toUpperCase(c);
-        ic.setComposingText(String.valueOf(c), 1);
+        ic.setComposingText(String.valueOf(tapChars.charAt(tapIndex)), 1);
         englishPending = true;
         tapTime = now;
         handler.removeCallbacks(tapTimeout);
         handler.postDelayed(tapTimeout, tapTimeoutMs);
     }
 
-    private boolean tapUpper;
+    /** Characters the key being tapped cycles through. */
+    private String tapChars;
 
-    private static boolean atSentenceStart(InputConnection ic) {
-        CharSequence before = ic.getTextBeforeCursor(4, 0);
-        if (before == null) return true;
-        String s = before.toString();
-        int end = s.length();
-        if (end == 0) return true;
-        if (s.charAt(end - 1) == '\n') return true;
-        if (s.charAt(end - 1) != ' ') return false;
-        while (end > 0 && s.charAt(end - 1) == ' ') end--;
-        if (end == 0) return s.length() == before.length() && before.length() < 4;
-        char last = s.charAt(end - 1);
-        return last == '.' || last == '!' || last == '?' || last == '\n';
+    /**
+     * abc: lower case; ABC: capitals; Abc: both cases, capitals first at the start of a sentence,
+     * so a capital is always reachable (2 = a b c A B C 2) without switching modes.
+     */
+    private String tapGroup(int d, InputConnection ic) {
+        if (d == 1) return TAP_PUNCT;
+        String lower = TAP_LETTERS[d];
+        String upper = lower.toUpperCase(java.util.Locale.US);
+        switch (mode) {
+            case M_UPPER:
+                return upper + d;
+            case M_ABC:
+                boolean capital = ic.getCursorCapsMode(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES) != 0;
+                return (capital ? upper + lower : lower + upper) + d;
+            default:
+                return lower + d;
+        }
     }
 
     /** Settles a pending multi-tap letter. */
