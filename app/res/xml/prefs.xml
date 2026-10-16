@@ -40,6 +40,8 @@
     </PreferenceCategory>
 
     <PreferenceCategory android:title="輸入選項">
+        <CheckBoxPreference android:key="mode_badge" android:title="在輸入框旁顯示輸入模式"
+            android:summary="游標旁邊的小框顯示目前模式（粵、倉、Abc…）" android:defaultValue="true" />
         <CheckBoxPreference android:key="cangjie_multitap" android:title="倉頡/速成用多按輸入字根"
             android:summary="關閉：每鍵按一下，自動猜字（類似 T9）。開啟：重複按鍵選擇字根，如 2 按兩下 = 月"
             android:defaultValue="false" />

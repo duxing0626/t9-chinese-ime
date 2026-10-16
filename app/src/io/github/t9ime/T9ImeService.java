@@ -10,6 +10,7 @@ import android.text.InputType;
 import android.util.SparseBooleanArray;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.CursorAnchorInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
@@ -76,6 +77,8 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
     private int longPressedKey = -1;
 
     private UserDict user;
+    private ModeBadge modeBadge;
+    private boolean badgeOn;
     private int symbolSet;
 
     private boolean letterTaps;
@@ -118,6 +121,7 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
         PreferenceManager.setDefaultValues(this, R.xml.prefs, false);
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
         user = Dicts.user(this);
+        modeBadge = new ModeBadge(this);
         readPrefs();
         mode = prefs.getInt("last_mode", M_JYUTPING);
         loadDictsForMode();
@@ -126,6 +130,7 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
 
     @Override
     public void onDestroy() {
+        modeBadge.hide();
         handler.removeCallbacks(saveUser);
         user.save();
         super.onDestroy();
@@ -163,6 +168,7 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
         active = cls == InputType.TYPE_CLASS_TEXT;
         if (!active) {
             hideStatusIcon();
+            modeBadge.hide();
             return;
         }
         int variation = type & InputType.TYPE_MASK_VARIATION;
@@ -179,6 +185,26 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
         if (latinField && mode < M_ABC) mode = M_LOWER;
         loadDictsForMode();
         showStatusIcon(MODE_ICON[mode]);
+        modeBadge.clearAnchor();
+        InputConnection ic = getCurrentInputConnection();
+        if (ic != null && badgeOn) {
+            ic.requestCursorUpdates(InputConnection.CURSOR_UPDATE_IMMEDIATE | InputConnection.CURSOR_UPDATE_MONITOR);
+        }
+        updateBadge();
+    }
+
+    @Override
+    public void onUpdateCursorAnchorInfo(CursorAnchorInfo info) {
+        modeBadge.setAnchor(info);
+    }
+
+    /** The small mode label next to the cursor. */
+    private void updateBadge() {
+        if (active && badgeOn) {
+            modeBadge.show(badge());
+        } else {
+            modeBadge.hide();
+        }
     }
 
     @Override
@@ -187,6 +213,7 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
         resetComposing();
         clearList();
         hideStatusIcon();
+        modeBadge.hide();
         handler.removeCallbacks(saveUser);
         user.save();
         super.onFinishInput();
@@ -196,6 +223,7 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
         letterTaps = prefs.getBoolean("cangjie_multitap", false);
         learnOn = prefs.getBoolean("learn", true);
         emojiOn = prefs.getBoolean("emoji", true);
+        badgeOn = prefs.getBoolean("mode_badge", true);
         assocOn = prefs.getBoolean("assoc", true);
         backDelete = prefs.getBoolean("back_delete", true);
         backDeletesText = prefs.getBoolean("back_delete_text", true);
@@ -576,6 +604,7 @@ public class T9ImeService extends InputMethodService implements CandidateView.Li
         if (!passwordField) prefs.edit().putInt("last_mode", mode).apply();
         loadDictsForMode();
         showStatusIcon(MODE_ICON[mode]);
+        updateBadge();
         say(modeName(mode));
     }
 

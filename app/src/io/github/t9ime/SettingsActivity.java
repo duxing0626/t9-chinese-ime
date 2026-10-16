@@ -102,6 +102,7 @@ public class SettingsActivity extends Activity {
 
     static final String HELP =
             "【通用】\n"
+            + "游標旁邊的藍色小框顯示目前輸入模式（可在設定關閉）\n"
             + "# ：切換輸入模式（粵→倉→速→筆→自訂→Abc→abc→ABC→123）\n"
             + "長按 # ：選擇其他輸入法\n"
             + "* ：符號及表情符號（在符號表中再按 * 下一類，# 上一類）　長按 * ：本設定頁\n"
